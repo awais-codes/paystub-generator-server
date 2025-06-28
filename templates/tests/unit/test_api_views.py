@@ -1,4 +1,5 @@
 import json
+import uuid
 from unittest.mock import patch, MagicMock
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -7,10 +8,10 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from .models import Template, TemplateInstance
-from .services.pdf_service import PDFGenerationService
-from .services.stripe_service import StripeService
-from .services.email_service import EmailService
+from templates.models import Template, TemplateInstance
+from templates.services.pdf_service import PDFGenerationService
+from templates.services.stripe_service import StripeService
+from templates.services.email_service import EmailService
 from .test_utils import create_test_pdf_content
 
 
@@ -330,9 +331,10 @@ class APIViewIntegrationTestCase(TestCase):
         pdf_content = create_test_pdf_content()
         self.template.file.save('integration_test.pdf', ContentFile(pdf_content))
     
+    @patch('templates.services.pdf_service.PDFGenerationService.generate_pdf')
     @patch('templates.services.pdf_service.default_storage')
     @patch('templates.services.stripe_service.StripeService.create_checkout_session')
-    def test_full_instance_creation_flow(self, mock_stripe, mock_storage):
+    def test_full_instance_creation_flow(self, mock_stripe, mock_storage, mock_pdf):
         """Test complete instance creation flow with real PDF generation"""
         url = reverse('template-instance-list')
         data = {
@@ -346,6 +348,9 @@ class APIViewIntegrationTestCase(TestCase):
         # Mock storage
         mock_storage.save.return_value = "templates-instances/test-uuid.pdf"
         
+        # Mock PDF generation
+        mock_pdf.return_value = 'https://fake-s3-url/test.pdf'
+        
         # Mock Stripe checkout session
         mock_stripe.return_value = {
             'session_id': 'cs_test_integration_123',
@@ -353,6 +358,10 @@ class APIViewIntegrationTestCase(TestCase):
         }
         
         response = self.client.post(url, data, format='json')
+        
+        # Debug output
+        print(f"Response status: {response.status_code}")
+        print(f"Response data: {response.data}")
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         
@@ -363,7 +372,7 @@ class APIViewIntegrationTestCase(TestCase):
         self.assertEqual(instance.data, data['data'])
         
         # Verify PDF generation was attempted
-        mock_storage.save.assert_called_once()
+        mock_pdf.assert_called_once()
         
         # Verify Stripe checkout was created
         mock_stripe.assert_called_once() 

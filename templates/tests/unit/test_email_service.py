@@ -5,8 +5,8 @@ from django.test import TestCase, override_settings
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from .models import Template, TemplateInstance
-from .services.email_service import EmailService
+from templates.models import Template, TemplateInstance
+from templates.services.email_service import EmailService
 from .test_utils import create_test_pdf_content
 
 

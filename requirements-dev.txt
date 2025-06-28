@@ -5,6 +5,6 @@ boto3
 django-storages
 djangorestframework
 stripe
-PyPDF2
+pdfrw
 reportlab
 django-anymail

@@ -7,8 +7,8 @@ from django.test.client import RequestFactory
 import os
 import unittest
 
-from .models import Template, TemplateInstance
-from .services.stripe_service import StripeService
+from templates.models import Template, TemplateInstance
+from templates.services.stripe_service import StripeService
 
 
 @unittest.skipUnless(os.environ.get('STRIPE_SECRET_KEY'), 'Stripe environment not set')

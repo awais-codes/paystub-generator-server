@@ -29,6 +29,8 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements-dev.txt
 ```
 
+**Note**: The project uses **reportlab + pdfrw** for PDF processing (replaced PyPDF2 for better Unicode field support).
+
 ### 4. Environment Variables
 Create a `.env` file in the project root:
 
@@ -89,6 +91,52 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+## PDF Processing
+
+### Overview
+The application uses **reportlab + pdfrw** for PDF generation and form field filling. This combination provides:
+
+- **Better Unicode support** for international characters
+- **Improved field detection** for complex PDF forms
+- **More reliable PDF processing** than PyPDF2
+
+### PDF Field Mapping
+For complex forms like W2, the application includes field mapping utilities:
+
+- **`templates/utils/pdf_inspector.py`**: Inspects PDF form fields
+- **`templates/utils/w2_field_map.py`**: Maps business field names to PDF field names
+
+### Working with PDF Templates
+
+#### 1. Inspecting PDF Fields
+```python
+from templates.utils.pdf_inspector import PDFInspector
+
+# Inspect form fields in a PDF
+fields = PDFInspector.inspect_form_fields(pdf_file)
+print(fields)
+```
+
+#### 2. Creating Field Mappings
+For forms with Unicode-encoded field names (like `<FEFF00630031005F0031005B0030005D>`), create mappings in `w2_field_map.py`:
+
+```python
+FIELD_MAP = {
+    'employee_ssn': 'f1_01[0]',
+    'employee_ein': 'f1_02[0]',
+    # ... more mappings
+}
+```
+
+#### 3. Testing PDF Generation
+```bash
+# Run W2 PDF tests
+python run_tests.py w2
+
+# Run all PDF-related tests
+python run_tests.py services
+```
+
 ## Testing
 
 ### Running Tests
@@ -100,6 +148,7 @@ python run_tests.py all
 python run_tests.py models
 python run_tests.py services
 python run_tests.py views
+python run_tests.py w2        # W2 PDF generation tests
 
 # Run specific test file
 python run_tests.py templates.tests.unit.test_api_views
@@ -124,6 +173,11 @@ templates/tests/
 - Test complete workflows
 - Use real database and file operations
 - Test API endpoints end-to-end
+
+#### PDF Tests
+- Test PDF generation with real templates
+- Verify field filling accuracy
+- Test Unicode field name handling
 
 #### Test Naming Convention
 - Test files: `test_<module_name>.py`
@@ -152,10 +206,12 @@ templates/
 │   ├── api.py         # Main API endpoints
 │   └── webhook.py     # Stripe webhook handler
 ├── services/          # Business logic
-│   ├── pdf_service.py
+│   ├── pdf_service.py # PDF generation (reportlab + pdfrw)
 │   ├── stripe_service.py
 │   └── email_service.py
 ├── utils/             # Utility functions
+│   ├── pdf_inspector.py # PDF field inspection
+│   └── w2_field_map.py  # Field mapping
 └── tests/             # Test files
 ```
 

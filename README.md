@@ -4,12 +4,13 @@ A Django REST API server for generating paystub PDFs from templates with Stripe 
 
 ## 🚀 Features
 
-- **PDF Generation**: Fill PDF templates with dynamic data
+- **PDF Generation**: Fill PDF templates with dynamic data using reportlab + pdfrw
 - **Payment Processing**: Stripe integration for secure payments
 - **Email Delivery**: Send generated PDFs via email
 - **Template Management**: Upload and manage PDF templates
 - **RESTful API**: Clean, documented API endpoints
 - **Comprehensive Testing**: Unit and integration tests with 90%+ coverage
+- **Unicode Field Support**: Handles Unicode-encoded PDF form fields
 
 ## 🏗️ Architecture
 
@@ -26,10 +27,12 @@ server/
 │   │   ├── api.py         # Main API endpoints
 │   │   └── webhook.py     # Stripe webhook handler
 │   ├── services/          # Business logic
-│   │   ├── pdf_service.py
+│   │   ├── pdf_service.py # PDF generation using reportlab + pdfrw
 │   │   ├── stripe_service.py
 │   │   └── email_service.py
 │   ├── utils/             # Utility functions
+│   │   ├── pdf_inspector.py # PDF field inspection
+│   │   └── w2_field_map.py  # W2 form field mapping
 │   └── tests/             # Test suite
 │       ├── unit/          # Unit tests
 │       ├── integration/   # Integration tests
@@ -47,7 +50,7 @@ server/
 - **Database**: PostgreSQL
 - **File Storage**: AWS S3
 - **Payments**: Stripe
-- **PDF Processing**: PyPDF2
+- **PDF Processing**: reportlab + pdfrw (replaced PyPDF2)
 - **Email**: django-anymail
 - **Testing**: Django Test Framework
 - **Deployment**: Gunicorn, Nginx

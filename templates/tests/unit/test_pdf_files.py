@@ -3,10 +3,10 @@ import io
 from django.test import TestCase, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from unittest.mock import patch
-import PyPDF2
+from pdfrw import PdfReader
 
-from .models import Template, TemplateInstance
-from .services.pdf_service import PDFGenerationService
+from templates.models import Template, TemplateInstance
+from templates.services.pdf_service import PDFGenerationService
 
 
 class RealPDFFileTestCase(TestCase):
@@ -75,8 +75,8 @@ class RealPDFFileTestCase(TestCase):
             call_args = mock_storage.save.call_args
             saved_content = call_args[0][1].read()
             
-            # Verify it's a valid PDF
-            pdf_reader = PyPDF2.PdfReader(io.BytesIO(saved_content))
+            # Verify it's a valid PDF using pdfrw
+            pdf_reader = PdfReader(io.BytesIO(saved_content))
             self.assertGreater(len(pdf_reader.pages), 0)
     
     def test_form_field_extraction(self):
@@ -90,31 +90,36 @@ class RealPDFFileTestCase(TestCase):
         if not os.path.exists(test_pdf_path):
             self.skipTest("Test PDF file not found")
         
-        # Load the PDF and extract form fields
+        # Load the PDF and extract form fields using pdfrw
         with open(test_pdf_path, 'rb') as f:
-            pdf_reader = PyPDF2.PdfReader(f)
+            pdf_reader = PdfReader(f)
             page = pdf_reader.pages[0]
             
-            # Check if PDF has form fields
-            if '/AcroForm' in page and '/Fields' in page['/AcroForm']:
-                fields = page['/AcroForm']['/Fields']
-                field_names = []
+            # Check if PDF has annotations (form fields)
+            annotations = page['/Annots']
+            field_names = []
+            
+            if annotations:
+                # Handle IndirectObject references
+                if hasattr(annotations, 'get_object'):
+                    annotations = annotations.get_object()
                 
-                for field in fields:
-                    if '/T' in field:
-                        field_name = field['/T']
-                        field_names.append(field_name)
-                
-                # Verify we found some form fields
-                self.assertGreater(len(field_names), 0)
-                
-                # Print field names for debugging
-                print(f"Found form fields: {field_names}")
-                
-                # Test that our test data has matching fields
-                matching_fields = [name for name in field_names if name in self.test_data]
-                self.assertGreater(len(matching_fields), 0, 
-                                 f"No matching fields found. Available: {field_names}")
+                for annotation in annotations:
+                    if annotation.Subtype == '/Widget':  # Form field
+                        field_name = annotation.T
+                        if field_name:
+                            field_names.append(field_name)
+            
+            # Verify we found some form fields
+            self.assertGreater(len(field_names), 0)
+            
+            # Print field names for debugging
+            print(f"Found form fields: {field_names}")
+            
+            # Test that our test data has matching fields
+            matching_fields = [name for name in field_names if name in self.test_data]
+            self.assertGreater(len(matching_fields), 0, 
+                             f"No matching fields found. Available: {field_names}")
     
     def test_pdf_with_different_data_sets(self):
         """Test PDF generation with different data sets"""
@@ -220,13 +225,14 @@ class PDFValidationTestCase(TestCase):
     
     def test_pdf_without_form_fields(self):
         """Test PDF generation with a PDF that has no form fields"""
-        # Create a simple PDF without form fields
-        pdf_writer = PyPDF2.PdfWriter()
-        page = PyPDF2.PageObject.create_blank_page(width=612, height=792)
-        pdf_writer.add_page(page)
+        # Create a simple PDF without form fields using reportlab
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
         
         output_buffer = io.BytesIO()
-        pdf_writer.write(output_buffer)
+        c = canvas.Canvas(output_buffer, pagesize=letter)
+        c.drawString(100, 750, "Simple PDF without form fields")
+        c.save()
         output_buffer.seek(0)
         
         uploaded_file = SimpleUploadedFile(

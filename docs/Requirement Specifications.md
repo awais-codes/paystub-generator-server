@@ -1,4 +1,4 @@
-Here’s a **final, fully integrated backend requirement document** complete, clear, and ready:
+Here's a **final, fully integrated backend requirement document** complete, clear, and ready:
 
 ✅ Django backend
 ✅ PDF templates with AcroForm fields
@@ -25,6 +25,7 @@ Build a Django backend that:
 * Stores generated documents securely in AWS S3
 * Offers optional email delivery after payment
 * Fully guest flow: **no user authentication**
+* Supports Unicode-encoded PDF form fields
 
 ---
 
@@ -69,6 +70,7 @@ Build a Django backend that:
 * Direct download link
 * Option to enter email to receive PDF
   ✅ Guest-only: no login/signup required
+  ✅ Unicode field support for international forms
 
 ---
 
@@ -92,7 +94,7 @@ Generate filled PDF & create Stripe payment session
 
 **Backend:**
 
-* Fill PDF fields with data
+* Fill PDF fields with data (using field mapping for complex forms)
 * Save generated PDF to S3
 * Create Stripe Checkout Session (save `stripe_session_id`)
 * Save instance as unpaid
@@ -167,11 +169,13 @@ Direct download endpoint
 ## 🛠 **PDF Generation Process**
 
 1. Load PDF template (`Template.file` from S3)
-2. Fill fields from JSON (matching AcroForm field names)
+2. Fill fields from JSON (using field mapping for Unicode-encoded fields)
 3. Flatten PDF (make uneditable)
 4. Upload generated file to S3 (`TemplateInstance.file`)
 
-Libraries: `pdfrw` / `PyPDF2` / `borb` / `pdfjinja`
+**Libraries**: `reportlab` + `pdfrw` (replaced PyPDF2 for better Unicode support)
+
+**Field Mapping**: For complex forms like W2, use mapping dictionaries to translate business field names to PDF field names.
 
 ---
 
@@ -253,7 +257,7 @@ After successful payment:
 * Django + DRF
 * Stripe Python SDK
 * boto3 + django-storages
-* `pdfrw` / `PyPDF2` / `borb` for PDFs
+* `reportlab` + `pdfrw` for PDFs
 * Mail: `django-anymail` or similar
 
 ---

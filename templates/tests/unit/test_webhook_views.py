@@ -1,4 +1,5 @@
 import json
+import uuid
 from unittest.mock import patch, MagicMock
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -6,8 +7,8 @@ from django.core.files.base import ContentFile
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from .models import Template, TemplateInstance
-from .services.stripe_service import StripeService
+from templates.models import Template, TemplateInstance
+from templates.services.stripe_service import StripeService
 from .test_utils import create_test_pdf_content
 
 
