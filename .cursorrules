@@ -7,17 +7,34 @@ This is a Django REST API server for a paystub generator application. The projec
 
 ### Django Project Structure
 - **main/**: Django project root with settings, URLs, and WSGI/ASGI configuration
-- **templates/**: Django app handling template and template instance management
+- **templates/**: Django app for template and instance management, organized as:
+  - **models.py**: Database models
+  - **serializers.py**: DRF serializers
+  - **admin.py**: Django admin configuration
+  - **migrations/**: Database migrations
+  - **views/**: API and webhook views, split by concern
+    - **api.py**: Main API endpoints (ViewSets)
+    - **webhook.py**: Stripe webhook endpoint
+  - **services/**: Business logic/services
+    - **pdf_service.py**: PDF generation and filling
+    - **stripe_service.py**: Stripe payment integration
+    - **email_service.py**: Email delivery logic
+  - **utils/**: Utility/helper functions
 - **requirements-dev.txt**: Development dependencies
 - **requirements-prod.txt**: Production dependencies
 - **docker-compose.yml**: PostgreSQL database container setup
+- **manage.py**: Django management script
+- **docs/**: Documentation and requirements
 
-### Key Technologies
+## Key Technologies
 - Django 5.2.2
 - Django REST Framework
 - PostgreSQL (via Docker)
 - AWS S3 (boto3 + django-storages)
 - Python-dotenv for environment variables
+- Stripe for payments
+- PyPDF2 for PDF processing
+- django-anymail for email
 
 ## Coding Standards
 
@@ -42,6 +59,8 @@ This is a Django REST API server for a paystub generator application. The projec
 - Use DefaultRouter for automatic URL generation
 - Support both JSON and multipart form data parsing
 - Use proper HTTP status codes in responses
+- Place all API endpoints in `templates/views/api.py`
+- Place webhook endpoints in `templates/views/webhook.py`
 
 ### File Structure
 
@@ -53,14 +72,22 @@ server/
 │ └── asgi.py # ASGI application
 ├── templates/ # Django app
 │ ├── models.py # Database models
-│ ├── views.py # API views
 │ ├── serializers.py # DRF serializers
 │ ├── admin.py # Django admin configuration
-│ └── migrations/ # Database migrations
+│ ├── migrations/ # Database migrations
+│ ├── views/ # API and webhook views
+│ │   ├── api.py # Main API endpoints (ViewSets)
+│ │   └── webhook.py # Stripe webhook endpoint
+│ ├── services/ # Business logic/services
+│ │   ├── pdf_service.py # PDF generation and filling
+│ │   ├── stripe_service.py # Stripe payment integration
+│ │   └── email_service.py # Email delivery logic
+│ └── utils/ # Utility/helper functions
 ├── requirements-dev.txt # Development dependencies
 ├── requirements-prod.txt # Production dependencies
 ├── docker-compose.yml # Database container setup
 └── manage.py # Django management script
+└── docs/ # Documentation and requirements
 
 ## Development Guidelines
 
@@ -69,6 +96,8 @@ server/
 - Required environment variables:
   - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`
   - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_STORAGE_BUCKET_NAME`, `AWS_S3_REGION_NAME`
+  - `STRIPE_SECRET_KEY`
+  - `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`
 
 ### Database
 - Use PostgreSQL as the primary database
