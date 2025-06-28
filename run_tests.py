@@ -1,88 +1,134 @@
 #!/usr/bin/env python3
 """
-Test runner script for the PDF Generator Server
-
-This script provides an easy way to run tests for the PDF service.
+Test runner for the Paystub Generator project.
+Supports running different categories of tests and provides detailed output.
 """
 
 import os
 import sys
 import django
 from django.conf import settings
+from django.test.utils import get_runner
 
-# Add the project directory to the Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+def setup_django():
+    """Setup Django environment for testing."""
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main.settings')
+    django.setup()
 
-# Set up Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main.settings')
-django.setup()
-
-def run_pdf_service_tests():
-    """Run tests specifically for the PDF service"""
-    from django.core.management import execute_from_command_line
+def run_tests(test_pattern=None, verbosity=2, interactive=True):
+    """
+    Run the test suite.
     
-    print("🧪 Running PDF Service Tests...")
+    Args:
+        test_pattern: Specific test pattern to run (e.g., 'templates.tests.unit.test_api_views')
+        verbosity: Test output verbosity (1=minimal, 2=normal, 3=verbose)
+        interactive: Whether to run tests interactively
+    """
+    setup_django()
+    
+    TestRunner = get_runner(settings)
+    test_runner = TestRunner(verbosity=verbosity, interactive=interactive, failfast=False)
+    
+    if test_pattern:
+        # Run specific test pattern
+        test_suite = test_runner.build_suite([test_pattern])
+    else:
+        # Run all tests
+        test_suite = test_runner.build_suite()
+    
+    failures = test_runner.run_suite(test_suite)
+    
+    if failures:
+        sys.exit(1)
+    else:
+        print("\n✅ All tests passed!")
+        sys.exit(0)
+
+def show_test_categories():
+    """Display available test categories."""
+    print("Available test categories:")
     print("=" * 50)
-    
-    # Run the main tests
-    print("\n📋 Running main PDF service tests...")
-    execute_from_command_line(['manage.py', 'test', 'templates.tests.PDFGenerationServiceTestCase', '-v', '2'])
-    
-    # Run integration tests
-    print("\n🔗 Running integration tests...")
-    execute_from_command_line(['manage.py', 'test', 'templates.tests.PDFServiceIntegrationTestCase', '-v', '2'])
-    
-    # Run real PDF file tests (if files exist)
-    print("\n📄 Running real PDF file tests...")
-    execute_from_command_line(['manage.py', 'test', 'templates.test_pdf_files', '-v', '2'])
-    
-    print("\n✅ All PDF service tests completed!")
+    print("📁 Unit Tests (templates/tests/unit/):")
+    print("  • models          - Database models")
+    print("  • serializers     - DRF serializers")
+    print("  • services        - Business logic services")
+    print("  • utils           - Utility functions")
+    print()
+    print("📁 Integration Tests (templates/tests/integration/):")
+    print("  • views           - API and webhook views")
+    print("  • workflows       - Complete user workflows")
+    print()
+    print("📁 Test Fixtures (templates/tests/fixtures/):")
+    print("  • test_files      - Test PDF files and data")
+    print()
+    print("Usage examples:")
+    print("  python run_tests.py all                    # Run all tests")
+    print("  python run_tests.py models                 # Run model tests")
+    print("  python run_tests.py services               # Run service tests")
+    print("  python run_tests.py views                  # Run view tests")
+    print("  python run_tests.py templates.tests.unit.test_api_views  # Run specific test file")
 
-def run_all_tests():
-    """Run all tests"""
-    from django.core.management import execute_from_command_line
+def main():
+    """Main entry point for the test runner."""
+    if len(sys.argv) < 2:
+        show_test_categories()
+        return
     
-    print("🧪 Running All Tests...")
-    print("=" * 50)
+    command = sys.argv[1].lower()
     
-    execute_from_command_line(['manage.py', 'test', '-v', '2'])
+    # Test category mappings
+    test_categories = {
+        'all': None,  # Run all tests
+        'models': 'templates.tests.unit.test_models',
+        'serializers': 'templates.tests.unit.test_serializers',
+        'services': [
+            'templates.tests.unit.test_pdf_service',
+            'templates.tests.unit.test_stripe_service',
+            'templates.tests.unit.test_email_service'
+        ],
+        'utils': 'templates.tests.unit.test_utils',
+        'views': [
+            'templates.tests.unit.test_api_views',
+            'templates.tests.unit.test_webhook_views'
+        ],
+        'workflows': 'templates.tests.integration.tests',
+        'unit': [
+            'templates.tests.unit.test_models',
+            'templates.tests.unit.test_serializers',
+            'templates.tests.unit.test_pdf_service',
+            'templates.tests.unit.test_stripe_service',
+            'templates.tests.unit.test_email_service',
+            'templates.tests.unit.test_utils',
+            'templates.tests.unit.test_api_views',
+            'templates.tests.unit.test_webhook_views'
+        ],
+        'integration': 'templates.tests.integration.tests',
+        'help': None
+    }
     
-    print("\n✅ All tests completed!")
-
-def run_specific_test(test_name):
-    """Run a specific test"""
-    from django.core.management import execute_from_command_line
+    if command == 'help':
+        show_test_categories()
+        return
     
-    print(f"🧪 Running specific test: {test_name}")
-    print("=" * 50)
+    if command not in test_categories:
+        print(f"❌ Unknown test category: {command}")
+        print("Use 'python run_tests.py help' to see available categories.")
+        sys.exit(1)
     
-    execute_from_command_line(['manage.py', 'test', test_name, '-v', '2'])
+    test_patterns = test_categories[command]
     
-    print(f"\n✅ Test {test_name} completed!")
+    if test_patterns is None:
+        # Run all tests
+        run_tests()
+    elif isinstance(test_patterns, list):
+        # Run multiple test patterns
+        for pattern in test_patterns:
+            print(f"\n🧪 Running {pattern}...")
+            run_tests(pattern)
+    else:
+        # Run single test pattern
+        print(f"\n🧪 Running {test_patterns}...")
+        run_tests(test_patterns)
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        command = sys.argv[1]
-        
-        if command == 'pdf':
-            run_pdf_service_tests()
-        elif command == 'all':
-            run_all_tests()
-        elif command == 'specific':
-            if len(sys.argv) > 2:
-                test_name = sys.argv[2]
-                run_specific_test(test_name)
-            else:
-                print("❌ Please provide a test name: python run_tests.py specific <test_name>")
-        else:
-            print("❌ Unknown command. Use: pdf, all, or specific")
-    else:
-        print("🧪 PDF Generator Server Test Runner")
-        print("=" * 40)
-        print("Usage:")
-        print("  python run_tests.py pdf      - Run PDF service tests only")
-        print("  python run_tests.py all      - Run all tests")
-        print("  python run_tests.py specific <test_name> - Run specific test")
-        print("\nExamples:")
-        print("  python run_tests.py pdf")
-        print("  python run_tests.py specific templates.tests.PDFGenerationServiceTestCase.test_fill_pdf_template_with_form_fields") 
+    main() 

@@ -98,7 +98,7 @@ class StripeService:
         Returns:
             TemplateInstance: Updated template instance
         """
-        from .models import TemplateInstance
+        from templates.models import TemplateInstance
         
         try:
             # Get the session from Stripe
