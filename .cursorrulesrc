@@ -1,0 +1,172 @@
+# Cursor Rules for Paystub Generator Server
+
+## Project Overview
+This is a Django REST API server for a paystub generator application. The project uses Django 5.2.2 with Django REST Framework, PostgreSQL database, and AWS S3 for file storage.
+
+## Architecture & Patterns
+
+### Django Project Structure
+- **main/**: Django project root with settings, URLs, and WSGI/ASGI configuration
+- **templates/**: Django app handling template and template instance management
+- **requirements-dev.txt**: Development dependencies
+- **requirements-prod.txt**: Production dependencies
+- **docker-compose.yml**: PostgreSQL database container setup
+
+### Key Technologies
+- Django 5.2.2
+- Django REST Framework
+- PostgreSQL (via Docker)
+- AWS S3 (boto3 + django-storages)
+- Python-dotenv for environment variables
+
+## Coding Standards
+
+### Python/Django Conventions
+- Follow PEP 8 style guidelines
+- Use Django's built-in conventions for models, views, and URLs
+- Use UUID fields for primary keys (as implemented in models)
+- Use snake_case for variable and function names
+- Use PascalCase for class names
+- Use UPPER_CASE for constants
+
+### Model Patterns
+- Always include `created_at` and `updated_at` timestamp fields
+- Use UUID primary keys with `default=uuid.uuid4, editable=False`
+- Use meaningful `__str__` methods for admin interface
+- Use `related_name` for foreign key relationships
+- Use `blank=True` for optional fields
+
+### API Patterns
+- Use Django REST Framework ViewSets for CRUD operations
+- Use ModelSerializers with `fields = '__all__'` for simple cases
+- Use DefaultRouter for automatic URL generation
+- Support both JSON and multipart form data parsing
+- Use proper HTTP status codes in responses
+
+### File Structure
+
+server/
+├── main/ # Django project root
+│ ├── settings.py # Project settings with environment variables
+│ ├── urls.py # Root URL configuration
+│ ├── wsgi.py # WSGI application
+│ └── asgi.py # ASGI application
+├── templates/ # Django app
+│ ├── models.py # Database models
+│ ├── views.py # API views
+│ ├── serializers.py # DRF serializers
+│ ├── admin.py # Django admin configuration
+│ └── migrations/ # Database migrations
+├── requirements-dev.txt # Development dependencies
+├── requirements-prod.txt # Production dependencies
+├── docker-compose.yml # Database container setup
+└── manage.py # Django management script
+
+## Development Guidelines
+
+### Environment Variables
+- Use `.env` file for local development
+- Required environment variables:
+  - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`
+  - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_STORAGE_BUCKET_NAME`, `AWS_S3_REGION_NAME`
+
+### Database
+- Use PostgreSQL as the primary database
+- Run database in Docker container via docker-compose
+- Use migrations for all database schema changes
+- Include proper indexes for performance
+
+### File Storage
+- Use AWS S3 for file storage (templates and template instances)
+- Configure django-storages for S3 integration
+- Use separate upload paths for different file types
+
+### API Design
+- RESTful API design principles
+- Use `/api/` prefix for all API endpoints
+- Use ViewSets for consistent CRUD operations
+- Support JSON and multipart form data
+- Include proper error handling and validation
+
+### Security
+- Use environment variables for sensitive configuration
+- Implement proper authentication and authorization
+- Use CSRF protection for web forms
+- Validate all user inputs
+- Use secure file upload handling
+
+### Testing
+- Write unit tests for models, views, and serializers
+- Use Django's test framework
+- Test both success and error cases
+- Mock external services (AWS S3) in tests
+
+### Code Quality
+- Use type hints where appropriate
+- Add docstrings for complex functions and classes
+- Follow Django's documentation style
+- Use meaningful variable and function names
+- Keep functions and classes focused and single-purpose
+
+## Common Patterns
+
+### Model Definition
+```python
+import uuid
+from django.db import models
+from django.utils import timezone
+
+class ExampleModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.name
+```
+
+### ViewSet Pattern
+```python
+from rest_framework import viewsets
+from rest_framework.parsers import MultiPartParser, FormParser
+
+class ExampleViewSet(viewsets.ModelViewSet):
+    queryset = ExampleModel.objects.all()
+    serializer_class = ExampleSerializer
+    parser_classes = (MultiPartParser, FormParser)
+```
+
+### Serializer Pattern
+```python
+from rest_framework import serializers
+
+class ExampleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExampleModel
+        fields = '__all__'
+```
+
+## Deployment Considerations
+- Use production-ready settings (DEBUG=False, proper SECRET_KEY)
+- Configure proper ALLOWED_HOSTS
+- Use environment-specific requirements files
+- Set up proper logging configuration
+- Configure static file serving for production
+- Use HTTPS in production
+- Set up proper database backups
+
+## Dependencies
+- Core: Django, Django REST Framework
+- Database: psycopg2-binary
+- Storage: boto3, django-storages
+- Environment: python-dotenv
+- Development: Add testing and development tools as needed
+
+## Notes
+- This is a paystub generator server, so consider security implications of handling sensitive financial data
+- File uploads should be validated for security
+- Consider implementing rate limiting for API endpoints
+- Add proper logging for debugging and monitoring
+- Consider implementing caching for better performance
+
