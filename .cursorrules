@@ -20,11 +20,19 @@ This is a Django REST API server for a paystub generator application. The projec
     - **stripe_service.py**: Stripe payment integration
     - **email_service.py**: Email delivery logic
   - **utils/**: Utility/helper functions
+  - **tests/**: Comprehensive test suite
+    - **unit/**: Unit tests for individual components
+    - **integration/**: Integration tests for complete workflows
+    - **fixtures/**: Test data and files
+- **docs/**: Comprehensive documentation
+  - **api/**: API documentation and examples
+  - **development/**: Development setup and guidelines
+  - **deployment/**: Production deployment instructions
 - **requirements-dev.txt**: Development dependencies
 - **requirements-prod.txt**: Production dependencies
 - **docker-compose.yml**: PostgreSQL database container setup
 - **manage.py**: Django management script
-- **docs/**: Documentation and requirements
+- **run_tests.py**: Enhanced test runner with categories
 
 ## Key Technologies
 - Django 5.2.2
@@ -76,18 +84,27 @@ server/
 │ ├── admin.py # Django admin configuration
 │ ├── migrations/ # Database migrations
 │ ├── views/ # API and webhook views
-│ │   ├── api.py # Main API endpoints (ViewSets)
-│ │   └── webhook.py # Stripe webhook endpoint
+│ │ ├── api.py # Main API endpoints (ViewSets)
+│ │ └── webhook.py # Stripe webhook endpoint
 │ ├── services/ # Business logic/services
-│ │   ├── pdf_service.py # PDF generation and filling
-│ │   ├── stripe_service.py # Stripe payment integration
-│ │   └── email_service.py # Email delivery logic
-│ └── utils/ # Utility/helper functions
+│ │ ├── pdf_service.py # PDF generation and filling
+│ │ ├── stripe_service.py # Stripe payment integration
+│ │ └── email_service.py # Email delivery logic
+│ ├── utils/ # Utility/helper functions
+│ └── tests/ # Comprehensive test suite
+│ ├── unit/ # Unit tests for individual components
+│ ├── integration/ # Integration tests for complete workflows
+│ └── fixtures/ # Test data and files
+├── docs/ # Documentation
+│ ├── api/ # API documentation and examples
+│ ├── development/ # Development setup and guidelines
+│ └── deployment/ # Production deployment instructions
 ├── requirements-dev.txt # Development dependencies
 ├── requirements-prod.txt # Production dependencies
 ├── docker-compose.yml # Database container setup
-└── manage.py # Django management script
-└── docs/ # Documentation and requirements
+├── manage.py # Django management script
+├── run_tests.py # Enhanced test runner
+└── README.md # Project documentation
 
 ## Development Guidelines
 
@@ -96,7 +113,7 @@ server/
 - Required environment variables:
   - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`
   - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_STORAGE_BUCKET_NAME`, `AWS_S3_REGION_NAME`
-  - `STRIPE_SECRET_KEY`
+  - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
   - `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`
 
 ### Database
@@ -117,18 +134,41 @@ server/
 - Support JSON and multipart form data
 - Include proper error handling and validation
 
+### Testing
+- Comprehensive test suite with unit and integration tests
+- Use Django's test framework
+- Test both success and error cases
+- Mock external services (AWS S3, Stripe, Email) in tests
+- Organize tests in `templates/tests/` with clear categories
+- Use test fixtures for consistent test data
+
+### Test Organization
+- **Unit Tests** (`templates/tests/unit/`): Test individual components
+  - `test_models.py`: Database model tests
+  - `test_serializers.py`: DRF serializer tests
+  - `test_pdf_service.py`: PDF generation service tests
+  - `test_stripe_service.py`: Stripe integration tests
+  - `test_email_service.py`: Email service tests
+  - `test_utils.py`: Utility function tests
+  - `test_api_views.py`: API view tests
+  - `test_webhook_views.py`: Webhook handler tests
+- **Integration Tests** (`templates/tests/integration/`): Test complete workflows
+  - `tests.py`: End-to-end workflow tests
+- **Fixtures** (`templates/tests/fixtures/`): Test data and files
+  - `test_files/`: Sample PDF files and test data
+
+### Test Runner
+- Use `python run_tests.py` for running tests
+- Support categories: `all`, `models`, `services`, `views`, `unit`, `integration`
+- Support specific test files: `python run_tests.py templates.tests.unit.test_api_views`
+- Provide helpful output and error reporting
+
 ### Security
 - Use environment variables for sensitive configuration
 - Implement proper authentication and authorization
 - Use CSRF protection for web forms
 - Validate all user inputs
 - Use secure file upload handling
-
-### Testing
-- Write unit tests for models, views, and serializers
-- Use Django's test framework
-- Test both success and error cases
-- Mock external services (AWS S3) in tests
 
 ### Code Quality
 - Use type hints where appropriate
@@ -176,6 +216,31 @@ class ExampleSerializer(serializers.ModelSerializer):
         fields = '__all__'
 ```
 
+### Service Pattern
+```python
+class ExampleService:
+    @staticmethod
+    def process_data(data):
+        # Business logic here
+        return processed_data
+```
+
+### Test Pattern
+```python
+from django.test import TestCase
+from unittest.mock import patch
+
+class ExampleTestCase(TestCase):
+    def setUp(self):
+        # Setup test data
+        pass
+    
+    @patch('external.service')
+    def test_example_function(self, mock_service):
+        # Test implementation
+        pass
+```
+
 ## Deployment Considerations
 - Use production-ready settings (DEBUG=False, proper SECRET_KEY)
 - Configure proper ALLOWED_HOSTS
@@ -184,6 +249,12 @@ class ExampleSerializer(serializers.ModelSerializer):
 - Configure static file serving for production
 - Use HTTPS in production
 - Set up proper database backups
+
+## Documentation
+- Maintain comprehensive documentation in `docs/`
+- Keep API documentation up to date
+- Include development and deployment guides
+- Document all environment variables and configuration options
 
 ## Dependencies
 - Core: Django, Django REST Framework
@@ -198,4 +269,6 @@ class ExampleSerializer(serializers.ModelSerializer):
 - Consider implementing rate limiting for API endpoints
 - Add proper logging for debugging and monitoring
 - Consider implementing caching for better performance
+- All tests should pass before merging changes
+- Use the enhanced test runner for organized testing
 
