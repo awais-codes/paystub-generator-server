@@ -15,12 +15,13 @@ class Template(models.Model):
 
 class TemplateInstance(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    data = models.JSONField(blank=True)  # Stores the specific data for this instance
+    template = models.ForeignKey(Template, on_delete=models.CASCADE, related_name='instances')
+    data = models.JSONField(blank=True, null=True)  # Allow null values
     file = models.FileField(upload_to='templates-instances/', blank=True)
+    is_paid = models.BooleanField(default=False)  # Track payment status
+    stripe_session_id = models.CharField(max_length=255, blank=True)  # Stripe checkout session ID
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-
-    template = models.ForeignKey(Template, on_delete=models.CASCADE, related_name='instances')
     
     def __str__(self):
         return f"Instance of {self.template.name} - {self.created_at}"
