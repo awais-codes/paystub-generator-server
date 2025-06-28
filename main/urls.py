@@ -17,14 +17,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from templates.views import TemplateViewSet, TemplateInstanceViewSet
+from templates.views import TemplateViewSet, TemplateInstanceViewSet, StripeWebhookView
 
 
 router = DefaultRouter()
 router.register(r'templates', TemplateViewSet)
-router.register(r'template-instances', TemplateInstanceViewSet)
+router.register(r'template-instances', TemplateInstanceViewSet, basename='template-instance')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
+    path('api/stripe/webhook/', StripeWebhookView.as_view(), name='stripe-webhook'),
 ]
