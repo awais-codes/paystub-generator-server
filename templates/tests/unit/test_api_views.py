@@ -16,27 +16,38 @@ from .test_utils import create_test_pdf_content
 
 
 class TemplateViewSetTestCase(TestCase):
-    """Test cases for TemplateViewSet"""
+    """Test cases for TemplateViewSet (read-only)"""
     
     def setUp(self):
         """Set up test data"""
         self.client = APIClient()
         self.template = Template.objects.create(
             name="Test Template",
-            description="A test template"
+            description="A test template",
+            template_type="paystub",
+            is_active=True
+        )
+        
+        # Create an inactive template
+        self.inactive_template = Template.objects.create(
+            name="Inactive Template",
+            description="An inactive template",
+            template_type="w2",
+            is_active=False
         )
     
     def test_list_templates(self):
-        """Test listing all templates"""
+        """Test listing all active templates"""
         url = reverse('template-list')
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data), 1)  # Only active templates
         self.assertEqual(response.data[0]['name'], "Test Template")
+        self.assertTrue(response.data[0]['is_active'])
     
-    def test_create_template(self):
-        """Test creating a new template"""
+    def test_create_template_not_allowed(self):
+        """Test that creating templates is not allowed (read-only)"""
         url = reverse('template-list')
         data = {
             'name': 'New Template',
@@ -45,12 +56,11 @@ class TemplateViewSetTestCase(TestCase):
         
         response = self.client.post(url, data)
         
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Template.objects.count(), 2)
-        self.assertEqual(response.data['name'], 'New Template')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(Template.objects.count(), 2)  # No new template created
     
-    def test_create_template_with_file(self):
-        """Test creating a template with PDF file"""
+    def test_create_template_with_file_not_allowed(self):
+        """Test that creating templates with files is not allowed (read-only)"""
         url = reverse('template-list')
         
         # Create a test PDF file using SimpleUploadedFile
@@ -64,9 +74,8 @@ class TemplateViewSetTestCase(TestCase):
         
         response = self.client.post(url, data, format='multipart')
         
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Template.objects.count(), 2)
-        self.assertIsNotNone(response.data['file'])
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(Template.objects.count(), 2)  # No new template created
     
     def test_retrieve_template(self):
         """Test retrieving a specific template"""
@@ -75,9 +84,11 @@ class TemplateViewSetTestCase(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], "Test Template")
+        self.assertEqual(response.data['template_type'], "paystub")
+        self.assertEqual(response.data['template_type_display'], "Paystub")
     
-    def test_update_template(self):
-        """Test updating a template"""
+    def test_update_template_not_allowed(self):
+        """Test that updating templates is not allowed (read-only)"""
         url = reverse('template-detail', kwargs={'pk': self.template.id})
         data = {
             'name': 'Updated Template',
@@ -86,17 +97,35 @@ class TemplateViewSetTestCase(TestCase):
         
         response = self.client.put(url, data)
         
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.template.refresh_from_db()
-        self.assertEqual(self.template.name, 'Updated Template')
+        self.assertEqual(self.template.name, 'Test Template')  # Name unchanged
     
-    def test_delete_template(self):
-        """Test deleting a template"""
+    def test_delete_template_not_allowed(self):
+        """Test that deleting templates is not allowed (read-only)"""
         url = reverse('template-detail', kwargs={'pk': self.template.id})
         response = self.client.delete(url)
         
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Template.objects.count(), 0)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(Template.objects.count(), 2)  # Template not deleted
+    
+    def test_filter_by_template_type(self):
+        """Test filtering templates by type"""
+        url = reverse('template-list')
+        response = self.client.get(url, {'template_type': 'paystub'})
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['template_type'], 'paystub')
+    
+    def test_search_templates(self):
+        """Test searching templates by name"""
+        url = reverse('template-list')
+        response = self.client.get(url, {'search': 'Test'})
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], 'Test Template')
 
 
 class TemplateInstanceViewSetTestCase(TestCase):

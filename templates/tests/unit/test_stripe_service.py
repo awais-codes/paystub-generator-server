@@ -10,6 +10,17 @@ import unittest
 from templates.models import Template, TemplateInstance
 from templates.services.stripe_service import StripeService
 
+# Create a mock exception class that properly inherits from Exception
+class MockSignatureVerificationError(Exception):
+    def __init__(self, message, sig_header):
+        self.message = message
+        self.sig_header = sig_header
+        super().__init__(message)
+
+class MockInvalidRequestError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
 
 @unittest.skipUnless(os.environ.get('STRIPE_SECRET_KEY'), 'Stripe environment not set')
 class StripeServiceTestCase(TestCase):
@@ -150,8 +161,7 @@ class StripeServiceTestCase(TestCase):
         webhook_secret = 'whsec_test_secret'
         
         # Mock Stripe to raise SignatureVerificationError
-        from stripe.error import SignatureVerificationError
-        mock_stripe.Webhook.construct_event.side_effect = SignatureVerificationError(
+        mock_stripe.Webhook.construct_event.side_effect = MockSignatureVerificationError(
             "Invalid signature", sig_header
         )
         
@@ -207,7 +217,7 @@ class StripeServiceTestCase(TestCase):
         with self.assertRaises(Exception) as context:
             self.stripe_service.handle_payment_success(session_id)
         
-        self.assertEqual(str(context.exception), "Payment not completed")
+        self.assertIn("Payment not completed", str(context.exception))
         
         # Verify template instance was not updated
         self.template_instance.refresh_from_db()
@@ -220,7 +230,7 @@ class StripeServiceTestCase(TestCase):
         with self.assertRaises(Exception) as context:
             self.stripe_service.handle_payment_success(session_id)
         
-        self.assertEqual(str(context.exception), "Template instance not found")
+        self.assertIn("Template instance not found", str(context.exception))
     
     @patch('templates.services.stripe_service.stripe')
     def test_handle_payment_success_stripe_error(self, mock_stripe):

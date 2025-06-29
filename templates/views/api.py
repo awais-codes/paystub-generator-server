@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import AllowAny
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
 from ..serializers import (
     TemplateSerializer, 
     TemplateInstanceSerializer, 
@@ -15,12 +17,19 @@ from ..services.pdf_service import PDFGenerationService
 from ..services.stripe_service import StripeService
 from ..services.email_service import EmailService
 
-class TemplateViewSet(viewsets.ModelViewSet):
-    """ViewSet for managing PDF templates (admin only)"""
-    queryset = Template.objects.all()
+class TemplateViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for browsing available system templates (read-only for users)"""
     serializer_class = TemplateSerializer
-    parser_classes = (MultiPartParser, FormParser)
-    permission_classes = [AllowAny]  # For demo purposes, should be admin-only in production
+    permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['template_type', 'is_active']
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'price', 'created_at']
+    ordering = ['template_type', 'name']
+    
+    def get_queryset(self):
+        """Only show active templates to users"""
+        return Template.objects.filter(is_active=True)
 
 class TemplateInstanceViewSet(viewsets.ModelViewSet):
     """ViewSet for managing template instances"""
@@ -28,6 +37,10 @@ class TemplateInstanceViewSet(viewsets.ModelViewSet):
     serializer_class = TemplateInstanceSerializer
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     permission_classes = [AllowAny]  # Guest access
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['template__template_type', 'is_paid']
+    ordering_fields = ['created_at']
+    ordering = ['-created_at']
     
     def get_serializer_class(self):
         if self.action == 'create':

@@ -3,21 +3,36 @@ from django.db import models
 from django.utils import timezone
 
 class Template(models.Model):
+    TEMPLATE_TYPES = [
+        ('paystub', 'Paystub'),
+        ('w2', 'W-2 Form'),
+        ('1099', '1099 Form'),
+        ('invoice', 'Invoice'),
+        ('receipt', 'Receipt'),
+        ('other', 'Other'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
-    file = models.FileField(upload_to='templates/', blank=True)
+    template_type = models.CharField(max_length=20, choices=TEMPLATE_TYPES, default='other')
+    file = models.FileField(upload_to='system-templates/')  # Required field for system templates
     description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)  # Whether template is available for use
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Price for generating instances
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering = ['template_type', 'name']
+
     def __str__(self):
-        return self.name
+        return f"{self.get_template_type_display()} - {self.name}"
 
 class TemplateInstance(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     template = models.ForeignKey(Template, on_delete=models.CASCADE, related_name='instances')
     data = models.JSONField(blank=True, null=True)  # Allow null values
-    file = models.FileField(upload_to='templates-instances/', blank=True)
+    file = models.FileField(upload_to='template-instances/', blank=True)
     is_paid = models.BooleanField(default=False)  # Track payment status
     stripe_session_id = models.CharField(max_length=255, blank=True)  # Stripe checkout session ID
     created_at = models.DateTimeField(default=timezone.now)

@@ -59,7 +59,10 @@ def run_tests(category='all', specific_test=None):
                 'templates.tests.unit.test_w2_pdf_generation'
             ]
         elif category == 'integration':
-            test_labels = ['templates.tests.integration.tests']
+            test_labels = [
+                'templates.tests.integration.tests',
+                'templates.tests.integration.test_stripe_integration'
+            ]
         elif category == 'w2':
             test_labels = ['templates.tests.unit.test_w2_pdf_generation']
         else:

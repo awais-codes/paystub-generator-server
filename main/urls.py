@@ -21,7 +21,7 @@ from templates.views import TemplateViewSet, TemplateInstanceViewSet, StripeWebh
 
 
 router = DefaultRouter()
-router.register(r'templates', TemplateViewSet)
+router.register(r'templates', TemplateViewSet, basename='template')
 router.register(r'template-instances', TemplateInstanceViewSet, basename='template-instance')
 
 urlpatterns = [

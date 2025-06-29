@@ -24,34 +24,23 @@ class EmailService:
             if not template_instance.file or not template_instance.is_paid:
                 raise ValueError("PDF not available or payment not completed")
             
-            # Get PDF file path
-            pdf_path = template_instance.file.path if hasattr(template_instance.file, 'path') else None
+            # For S3 storage, we'll use the URL in the email body instead of attachment
+            pdf_url = template_instance.file.url if template_instance.file else None
             
-            # If using S3, download temporarily
-            if not pdf_path and template_instance.file.url:
-                # For S3, we'll use the URL in the email body
-                pdf_url = template_instance.file.url
-                pdf_path = None
-            else:
-                pdf_url = None
+            if not pdf_url:
+                raise ValueError("PDF file not found")
             
             # Prepare email content
             subject = f"Your PDF Document - {template_instance.template.name}"
             
-            # Email body
+            # Email body with download link
             body = f"""
             Hello,
             
             Your PDF document has been generated successfully from the {template_instance.template.name} template.
             
-            """
+            You can download your PDF here: {pdf_url}
             
-            if pdf_url:
-                body += f"You can download your PDF here: {pdf_url}\n\n"
-            else:
-                body += "Your PDF is attached to this email.\n\n"
-            
-            body += """
             Thank you for using our service!
             
             Best regards,
@@ -65,15 +54,6 @@ class EmailService:
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 to=[recipient_email],
             )
-            
-            # Attach PDF if we have a local path
-            if pdf_path and os.path.exists(pdf_path):
-                with open(pdf_path, 'rb') as pdf_file:
-                    email.attach(
-                        f"{template_instance.template.name}.pdf",
-                        pdf_file.read(),
-                        'application/pdf'
-                    )
             
             # Send email
             email.send()

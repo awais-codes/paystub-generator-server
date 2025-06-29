@@ -11,8 +11,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from pdfrw import PdfReader
 
-from .models import Template, TemplateInstance
-from .services.pdf_service import PDFGenerationService
+from templates.models import Template, TemplateInstance
+from templates.services.pdf_service import PDFGenerationService
 
 
 class PDFGenerationServiceTestCase(TestCase):
