@@ -9,3 +9,4 @@ pdfrw
 reportlab
 django-anymail
 django-filter
+django-cors-headers
