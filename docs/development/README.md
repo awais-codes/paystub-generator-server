@@ -1,7 +1,7 @@
 # Development Guide
 
 ## Overview
-This guide covers setting up the development environment, running tests, and contributing to the Paystub Generator project.
+This guide covers setting up the development environment, running tests, and contributing to the Paystub Generator project. The project is designed to work with React frontends with full CORS support.
 
 ## Prerequisites
 
@@ -9,6 +9,7 @@ This guide covers setting up the development environment, running tests, and con
 - PostgreSQL
 - Docker (optional, for database)
 - Git
+- Node.js (optional, for React frontend development)
 
 ## Development Setup
 
@@ -29,7 +30,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements-dev.txt
 ```
 
-**Note**: The project uses **reportlab + pdfrw** for PDF processing (replaced PyPDF2 for better Unicode field support).
+**Note**: The project uses **reportlab + pdfrw** for PDF processing (replaced PyPDF2 for better Unicode field support) and **django-cors-headers** for React frontend integration.
 
 ### 4. Environment Variables
 Create a `.env` file in the project root:
@@ -91,6 +92,58 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+## Frontend Integration
+
+### CORS Configuration
+The Django server is configured with CORS support for React frontends:
+
+#### Allowed Origins
+- `http://localhost:3000` (Create React App)
+- `http://127.0.0.1:3000` (Alternative localhost)
+- `http://localhost:5173` (Vite)
+- `http://127.0.0.1:5173` (Vite alternative)
+
+#### Configuration Details
+- **Credentials**: Enabled for authentication headers and cookies
+- **Methods**: All HTTP methods (GET, POST, PUT, PATCH, DELETE, OPTIONS)
+- **Headers**: Authorization, Content-Type, and other necessary headers
+
+### React Frontend Development
+
+#### Setting Up React Frontend
+```bash
+# Create React app (if not already created)
+npx create-react-app paystub-frontend
+cd paystub-frontend
+
+# Or use Vite
+npm create vite@latest paystub-frontend -- --template react
+cd paystub-frontend
+```
+
+Your React frontend can now make API calls to the Django server without CORS issues.
+
+#### Testing CORS Configuration
+```bash
+# Test CORS headers
+python manage.py test templates.tests.unit.test_cors
+```
+
+### Adding New Origins
+To add new origins for your React frontend:
+
+1. Edit `main/settings.py`
+2. Add to `CORS_ALLOWED_ORIGINS`:
+```python
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://your-custom-domain.com",  # Add your domain
+]
+```
+
 ## PDF Processing
 
 ### Overview
@@ -149,15 +202,21 @@ python run_tests.py models
 python run_tests.py services
 python run_tests.py views
 python run_tests.py w2        # W2 PDF generation tests
+python run_tests.py unit      # All unit tests (including CORS tests)
 
 # Run specific test file
 python run_tests.py templates.tests.unit.test_api_views
+
+# Test CORS configuration
+python manage.py test templates.tests.unit.test_cors
 ```
 
 ### Test Structure
 ```
 templates/tests/
 ├── unit/           # Unit tests for individual components
+│   ├── test_cors.py # CORS configuration tests
+│   └── ...         # Other unit tests
 ├── integration/    # Integration tests for complete workflows
 └── fixtures/       # Test data and files
 ```
@@ -173,6 +232,12 @@ templates/tests/
 - Test complete workflows
 - Use real database and file operations
 - Test API endpoints end-to-end
+
+#### CORS Tests
+- Test CORS headers are present
+- Verify preflight OPTIONS requests
+- Test multiple origins
+- Ensure disallowed origins are rejected
 
 #### PDF Tests
 - Test PDF generation with real templates
@@ -196,24 +261,10 @@ templates/tests/
 - Follow Django REST Framework patterns
 - Use meaningful model field names
 
-### File Organization
-```
-templates/
-├── models.py           # Database models
-├── serializers.py      # DRF serializers
-├── admin.py           # Django admin
-├── views/             # API views
-│   ├── api.py         # Main API endpoints
-│   └── webhook.py     # Stripe webhook handler
-├── services/          # Business logic
-│   ├── pdf_service.py # PDF generation (reportlab + pdfrw)
-│   ├── stripe_service.py
-│   └── email_service.py
-├── utils/             # Utility functions
-│   ├── pdf_inspector.py # PDF field inspection
-│   └── w2_field_map.py  # Field mapping
-└── tests/             # Test files
-```
+### Frontend Integration
+- Use consistent API endpoint patterns
+- Handle CORS errors gracefully
+- Implement proper error handling for API calls
 
 ## Development Workflow
 

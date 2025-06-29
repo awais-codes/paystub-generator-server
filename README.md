@@ -1,47 +1,59 @@
 # Paystub Generator Server
 
-A Django REST API server for generating paystub PDFs from templates with Stripe payment integration.
+A Django REST API server for generating professional paystub PDFs from templates with Stripe payment integration. This backend is designed to work seamlessly with React frontends and provides a complete solution for generating, processing, and delivering paystub documents.
 
-## 🚀 Features
+## 🎯 What This Project Does
+
+This is a **Paystub Generator Service** that allows users to:
+
+- **Generate Professional Paystubs**: Fill PDF templates with employee data to create official-looking paystub documents
+- **Process Payments Securely**: Use Stripe Checkout for secure payment processing before document delivery
+- **Deliver Documents**: Send generated PDFs via email or provide direct download links
+- **Support Multiple Templates**: Manage different paystub formats (W2, regular paystubs, etc.)
+- **Work with React Frontends**: Full CORS support for seamless React integration
+
+## 🚀 Key Features
 
 - **PDF Generation**: Fill PDF templates with dynamic data using reportlab + pdfrw
-- **Payment Processing**: Stripe integration for secure payments
-- **Email Delivery**: Send generated PDFs via email
-- **Template Management**: Upload and manage PDF templates
-- **RESTful API**: Clean, documented API endpoints
+- **Payment Processing**: Stripe integration for secure payments before document access
+- **Email Delivery**: Send generated PDFs via email after payment completion
+- **Template Management**: Upload and manage PDF templates with AcroForm fields
+- **RESTful API**: Clean, documented API endpoints for frontend integration
+- **React Frontend Ready**: Configured with CORS support for React applications
 - **Comprehensive Testing**: Unit and integration tests with 90%+ coverage
-- **Unicode Field Support**: Handles Unicode-encoded PDF form fields
+- **Unicode Field Support**: Handles Unicode-encoded PDF form fields for international forms
+- **Guest User Flow**: No authentication required - perfect for one-time document generation
 
 ## 🏗️ Architecture
 
 ```
 server/
 ├── main/                    # Django project root
-│   ├── settings.py         # Project settings
+│   ├── settings.py         # Project settings with CORS configuration
 │   ├── urls.py            # Root URL configuration
 │   └── wsgi.py            # WSGI application
 ├── templates/              # Django app
-│   ├── models.py          # Database models
+│   ├── models.py          # Database models (Template, TemplateInstance)
 │   ├── serializers.py     # DRF serializers
 │   ├── views/             # API views
-│   │   ├── api.py         # Main API endpoints
+│   │   ├── api.py         # Main API endpoints (ViewSets)
 │   │   └── webhook.py     # Stripe webhook handler
 │   ├── services/          # Business logic
 │   │   ├── pdf_service.py # PDF generation using reportlab + pdfrw
-│   │   ├── stripe_service.py
-│   │   └── email_service.py
+│   │   ├── stripe_service.py # Stripe payment integration
+│   │   └── email_service.py # Email delivery service
 │   ├── utils/             # Utility functions
 │   │   ├── pdf_inspector.py # PDF field inspection
 │   │   └── w2_field_map.py  # W2 form field mapping
-│   └── tests/             # Test suite
-│       ├── unit/          # Unit tests
+│   └── tests/             # Comprehensive test suite
+│       ├── unit/          # Unit tests (including CORS tests)
 │       ├── integration/   # Integration tests
-│       └── fixtures/      # Test data
+│       └── fixtures/      # Test data and files
 ├── docs/                  # Documentation
 │   ├── api/              # API documentation
 │   ├── development/      # Development guide
 │   └── deployment/       # Deployment guide
-└── requirements-*.txt    # Dependencies
+└── requirements-*.txt    # Dependencies (including django-cors-headers)
 ```
 
 ## 🛠️ Tech Stack
@@ -49,20 +61,34 @@ server/
 - **Backend**: Django 5.2.2, Django REST Framework
 - **Database**: PostgreSQL
 - **File Storage**: AWS S3
-- **Payments**: Stripe
-- **PDF Processing**: reportlab + pdfrw (replaced PyPDF2)
+- **Payments**: Stripe Checkout
+- **PDF Processing**: reportlab + pdfrw (replaced PyPDF2 for better Unicode support)
 - **Email**: django-anymail
+- **CORS**: django-cors-headers (React frontend support)
 - **Testing**: Django Test Framework
 - **Deployment**: Gunicorn, Nginx
+
+## 🌐 React Frontend Integration
+
+This server is specifically configured to work with React frontends:
+
+### CORS Configuration
+- **Allowed Origins**: `localhost:3000`, `127.0.0.1:3000`, `localhost:5173`, `127.0.0.1:5173`
+- **Credentials**: Enabled for authentication headers and cookies
+- **Methods**: All HTTP methods (GET, POST, PUT, PATCH, DELETE, OPTIONS)
+- **Headers**: Authorization, Content-Type, and other necessary headers
+
+Your React app can now make API calls to `http://localhost:8000/api/` without CORS issues!
 
 ## 📋 Prerequisites
 
 - Python 3.8+
 - PostgreSQL
-- Docker (optional)
+- Docker (optional, for database)
 - AWS S3 bucket
 - Stripe account
 - Email service (SMTP)
+- React frontend (optional, but supported)
 
 ## 🚀 Quick Start
 
@@ -134,6 +160,10 @@ python manage.py runserver
 
 The API will be available at `http://localhost:8000/api/`
 
+### 5. Test with React Frontend
+
+Your React app can now make API calls to `http://localhost:8000/api/` without CORS issues!
+
 ## 🧪 Testing
 
 ### Run All Tests
@@ -146,14 +176,20 @@ python run_tests.py all
 python run_tests.py models      # Database models
 python run_tests.py services    # Business logic services
 python run_tests.py views       # API views
-python run_tests.py unit        # All unit tests
+python run_tests.py unit        # All unit tests (including CORS tests)
 python run_tests.py integration # Integration tests
+```
+
+### CORS Testing
+```bash
+python manage.py test templates.tests.unit.test_cors
 ```
 
 ### Test Coverage
 The project includes comprehensive tests with:
 - Unit tests for all services and utilities
 - Integration tests for API endpoints
+- CORS configuration tests
 - Mocked external services (Stripe, AWS S3, Email)
 - Test fixtures and sample data
 
@@ -162,25 +198,22 @@ The project includes comprehensive tests with:
 ### Core Endpoints
 
 #### Templates
-- `GET /api/templates/` - List all templates
-- `POST /api/templates/` - Create new template
-- `GET /api/templates/{id}/` - Get specific template
-- `PUT /api/templates/{id}/` - Update template
-- `DELETE /api/templates/{id}/` - Delete template
+- `GET /api/templates/` - List all available templates
+- `GET /api/templates/{id}/` - Get specific template details
 
-#### Template Instances
+#### Template Instances (Paystub Generation)
 - `GET /api/template-instances/` - List instances
-- `POST /api/template-instances/` - Create instance (initiates payment)
-- `GET /api/template-instances/{id}/` - Get instance
-- `POST /api/template-instances/{id}/send-email/` - Send PDF via email
-- `GET /api/template-instances/{id}/download/` - Get download URL
+- `POST /api/template-instances/` - Create new paystub (initiates payment)
+- `GET /api/template-instances/{id}/` - Get instance details
+- `POST /api/template-instances/{id}/send-email/` - Send PDF via email (after payment)
+- `GET /api/template-instances/{id}/download/` - Get download URL (after payment)
 
 #### Webhooks
 - `POST /stripe/webhook/` - Stripe payment webhook
 
 ### Example Usage
 
-#### Create Template Instance
+#### Create a Paystub
 ```bash
 curl -X POST http://localhost:8000/api/template-instances/ \
   -H "Content-Type: application/json" \
@@ -190,17 +223,18 @@ curl -X POST http://localhost:8000/api/template-instances/ \
       "EmployeeName": "John Doe",
       "SSN": "123-45-6789",
       "GrossPay": "5000.00",
-      "NetPay": "3500.00"
+      "NetPay": "3500.00",
+      "PayPeriod": "2024-01-01 to 2024-01-15"
     }
   }'
 ```
 
-#### Send PDF via Email
+#### Send PDF via Email (after payment)
 ```bash
 curl -X POST http://localhost:8000/api/template-instances/uuid/send-email/ \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "user@example.com"
+    "email": "employee@company.com"
   }'
 ```
 
@@ -212,11 +246,12 @@ For complete API documentation, see [docs/api/README.md](docs/api/README.md).
 
 The project follows Django best practices with a clean separation of concerns:
 
-- **Models**: Database schema and relationships
+- **Models**: Database schema for templates and instances
 - **Serializers**: Data validation and transformation
 - **Views**: API endpoints and request handling
-- **Services**: Business logic and external integrations
-- **Utils**: Helper functions and utilities
+- **Services**: Business logic (PDF generation, Stripe, Email)
+- **Utils**: Helper functions and PDF field mapping
+- **Tests**: Comprehensive test suite including CORS tests
 
 ### Adding New Features
 
@@ -270,6 +305,7 @@ For detailed deployment instructions, see [docs/deployment/README.md](docs/deplo
 - Secure file upload handling
 - HTTPS enforcement in production
 - Rate limiting on API endpoints
+- CORS configuration for authorized origins only
 
 ## 📊 Monitoring
 
@@ -326,4 +362,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [ ] Webhook retry mechanism
 - [ ] Caching layer (Redis)
 - [ ] Rate limiting improvements
-- [ ] API documentation (Swagger/OpenAPI) 
+- [ ] API documentation (Swagger/OpenAPI)
+- [ ] React frontend template
+- [ ] Additional paystub formats 

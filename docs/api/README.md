@@ -1,12 +1,28 @@
 # API Documentation
 
 ## Overview
-The Paystub Generator API provides endpoints for managing templates, generating PDFs, and handling payments through Stripe. The system uses **reportlab + pdfrw** for PDF processing with support for Unicode-encoded form fields.
+The Paystub Generator API provides endpoints for managing templates, generating PDFs, and handling payments through Stripe. The system uses **reportlab + pdfrw** for PDF processing with support for Unicode-encoded form fields. This API is designed to work seamlessly with React frontends with full CORS support.
 
 ## Base URL
 ```
 http://localhost:8000/api/
 ```
+
+## Frontend Integration
+
+### CORS Configuration
+This API is configured with CORS support for React frontends:
+
+- **Allowed Origins**: 
+  - `http://localhost:3000` (Create React App)
+  - `http://127.0.0.1:3000` (Alternative localhost)
+  - `http://localhost:5173` (Vite)
+  - `http://127.0.0.1:5173` (Vite alternative)
+- **Credentials**: Enabled for authentication headers and cookies
+- **Methods**: GET, POST, PUT, PATCH, DELETE, OPTIONS
+- **Headers**: Authorization, Content-Type, and other necessary headers
+
+Your React frontend can make API calls to this server without CORS issues.
 
 ## Authentication
 Currently, the API does not require authentication. In production, consider implementing JWT or API key authentication.
@@ -43,6 +59,7 @@ For complex forms, the system uses field mapping to translate business field nam
 - **GET** `/templates/`
 - **Description**: Retrieve all available templates
 - **Response**: List of template objects
+- **CORS**: ✅ Supported
 
 #### Create Template
 - **POST** `/templates/`
@@ -60,6 +77,7 @@ For complex forms, the system uses field mapping to translate business field nam
 #### Retrieve Template
 - **GET** `/templates/{id}/`
 - **Description**: Get a specific template by ID
+- **CORS**: ✅ Supported
 
 #### Update Template
 - **PUT** `/templates/{id}/`
@@ -74,10 +92,12 @@ For complex forms, the system uses field mapping to translate business field nam
 #### List Instances
 - **GET** `/template-instances/`
 - **Description**: Retrieve all template instances
+- **CORS**: ✅ Supported
 
 #### Create Instance
 - **POST** `/template-instances/`
 - **Description**: Create a new template instance and initiate payment
+- **CORS**: ✅ Supported
 - **Body**:
   ```json
   {
@@ -102,10 +122,12 @@ For complex forms, the system uses field mapping to translate business field nam
 #### Retrieve Instance
 - **GET** `/template-instances/{id}/`
 - **Description**: Get a specific template instance
+- **CORS**: ✅ Supported
 
 #### Send Email
 - **POST** `/template-instances/{id}/send-email/`
 - **Description**: Send PDF via email (requires payment)
+- **CORS**: ✅ Supported
 - **Body**:
   ```json
   {
@@ -116,6 +138,7 @@ For complex forms, the system uses field mapping to translate business field nam
 #### Download PDF
 - **GET** `/template-instances/{id}/download/`
 - **Description**: Get download URL for PDF (requires payment)
+- **CORS**: ✅ Supported
 
 ### Webhooks
 
@@ -194,4 +217,20 @@ curl -X POST http://localhost:8000/api/template-instances/uuid/send-email/ \
   -d '{
     "email": "user@example.com"
   }'
-``` 
+```
+
+## Testing CORS Configuration
+
+To test that CORS is working correctly with your React frontend:
+
+```bash
+# Test CORS headers
+python manage.py test templates.tests.unit.test_cors
+```
+
+This will verify that:
+- CORS headers are present in responses
+- Preflight OPTIONS requests work correctly
+- Credentials are allowed
+- Multiple origins are supported
+- Disallowed origins are properly rejected 
