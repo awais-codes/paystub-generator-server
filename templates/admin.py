@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Template, TemplateInstance
+from .models import Template, TemplateInstance, TemplatePreview
 
 @admin.register(Template)
 class TemplateAdmin(admin.ModelAdmin):
@@ -14,7 +14,7 @@ class TemplateAdmin(admin.ModelAdmin):
             'fields': ('id', 'name', 'template_type', 'description')
         }),
         ('Template File', {
-            'fields': ('file',)
+            'fields': ('file', 'preview_file')
         }),
         ('Settings', {
             'fields': ('is_active', 'price')
@@ -41,6 +41,26 @@ class TemplateInstanceAdmin(admin.ModelAdmin):
         }),
         ('Payment', {
             'fields': ('is_paid', 'stripe_session_id')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+@admin.register(TemplatePreview)
+class TemplatePreviewAdmin(admin.ModelAdmin):
+    list_display = ['template', 'created_at', 'updated_at']
+    list_filter = ['template__template_type', 'created_at']
+    search_fields = ['template__name']
+    readonly_fields = ['id', 'created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Preview Information', {
+            'fields': ('id', 'template', 'data')
+        }),
+        ('Generated Preview File', {
+            'fields': ('file',)
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),

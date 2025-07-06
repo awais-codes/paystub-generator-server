@@ -51,6 +51,88 @@ For complex forms, the system uses field mapping to translate business field nam
 - **Paystubs**: Standard field support
 - **Custom Forms**: Auto-detection of form fields
 
+## New Preview-Based Workflow (Recommended)
+
+### Flow
+1. **Create Preview**: User submits form data to generate a preview PDF using the template's `preview_file`.
+2. **Update Preview**: User can update the preview with new data (regenerates the preview PDF).
+3. **Create Instance from Preview**: When satisfied, user creates a final template instance from the preview (using the main template file), which initiates payment. **After instance creation, the preview is automatically deleted.**
+
+### Endpoints
+
+#### Create Preview
+- **POST** `/template-previews/`
+- **Description**: Generate a preview PDF using the template's preview file and user data.
+- **Body**:
+  ```json
+  {
+    "template": "template-uuid",
+    "data": {
+      "employee_ssn": "123-45-6789",
+      "wages_tips": "50000"
+    }
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "id": "preview-uuid",
+    "file_url": "https://.../template-previews/preview-uuid.pdf",
+    ...
+  }
+  ```
+
+#### Update Preview
+- **PATCH** `/template-previews/{id}/`
+- **Description**: Update the preview with new data and regenerate the preview PDF.
+- **Body**:
+  ```json
+  {
+    "data": {
+      "employee_ssn": "987-65-4321",
+      "wages_tips": "60000"
+    }
+  }
+  ```
+- **Response**: Same as create.
+
+#### Create Instance from Preview
+- **POST** `/template-instances/`
+- **Description**: Create a final template instance from a preview (uses the main template file, not the preview file). **The preview is deleted after instance creation.**
+- **Body**:
+  ```json
+  {
+    "preview_id": "preview-uuid"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "instance_id": "instance-uuid",
+    "checkout_url": "https://checkout.stripe.com/...",
+    "message": "PDF generated successfully. Please complete payment to download."
+  }
+  ```
+
+## Legacy Flow (Direct Instance Creation)
+
+(Still supported, but preview-based flow is recommended for best UX.)
+
+#### Create Instance
+- **POST** `/template-instances/`
+- **Description**: Create a new template instance and initiate payment
+- **Body**:
+  ```json
+  {
+    "template": "template-uuid",
+    "data": {
+      "employee_ssn": "123-45-6789",
+      ...
+    }
+  }
+  ```
+- **Response**: Same as above.
+
 ## Endpoints
 
 ### Templates
@@ -92,36 +174,6 @@ For complex forms, the system uses field mapping to translate business field nam
 #### List Instances
 - **GET** `/template-instances/`
 - **Description**: Retrieve all template instances
-- **CORS**: ✅ Supported
-
-#### Create Instance
-- **POST** `/template-instances/`
-- **Description**: Create a new template instance and initiate payment
-- **CORS**: ✅ Supported
-- **Body**:
-  ```json
-  {
-    "template": 1,
-    "data": {
-      "EmployeeName": "John Doe",
-      "SSN": "123-45-6789",
-      "GrossPay": "5000.00",
-      "NetPay": "3500.00"
-    }
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "instance_id": "uuid",
-    "checkout_url": "https://checkout.stripe.com/...",
-    "message": "Payment required"
-  }
-  ```
-
-#### Retrieve Instance
-- **GET** `/template-instances/{id}/`
-- **Description**: Get a specific template instance
 - **CORS**: ✅ Supported
 
 #### Send Email
@@ -169,53 +221,29 @@ Error responses include a JSON object with an `error` field:
 
 ## Example Usage
 
-### Creating a W2 Template Instance
+### Preview Workflow Example
 
 ```bash
+# 1. Create a preview
+curl -X POST http://localhost:8000/api/template-previews/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": "TEMPLATE_UUID",
+    "data": {"employee_ssn": "123-45-6789", "wages_tips": "50000"}
+  }'
+
+# 2. Update the preview
+curl -X PATCH http://localhost:8000/api/template-previews/PREVIEW_UUID/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {"employee_ssn": "987-65-4321", "wages_tips": "60000"}
+  }'
+
+# 3. Create an instance from the preview
 curl -X POST http://localhost:8000/api/template-instances/ \
   -H "Content-Type: application/json" \
   -d '{
-    "template": 1,
-    "data": {
-      "employee_ssn": "123-45-6789",
-      "employee_ein": "12-3456789",
-      "employer_name_address_zip": "ACME Corp, 123 Business Ave, NY 10001",
-      "control_number": "2024001",
-      "firt_name_and_initial": "John A",
-      "last_name": "Smith",
-      "wages_tips": "75000.00",
-      "fed_income_tax_withheld": "15000.00",
-      "social_security_wages": "75000.00",
-      "social_security_wages_withheld": "4650.00",
-      "medicare_wages": "75000.00",
-      "medicare_tax_witheld": "1087.50"
-    }
-  }'
-```
-
-### Creating a Paystub Template Instance
-
-```bash
-curl -X POST http://localhost:8000/api/template-instances/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "template": 1,
-    "data": {
-      "EmployeeName": "Jane Smith",
-      "SSN": "987-65-4321",
-      "GrossPay": "5000.00",
-      "NetPay": "3500.00"
-    }
-  }'
-```
-
-### Sending PDF via Email
-
-```bash
-curl -X POST http://localhost:8000/api/template-instances/uuid/send-email/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com"
+    "preview_id": "PREVIEW_UUID"
   }'
 ```
 

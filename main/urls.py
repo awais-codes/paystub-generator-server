@@ -17,12 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from templates.views import TemplateViewSet, TemplateInstanceViewSet, StripeWebhookView
+from templates.views import TemplateViewSet, TemplateInstanceViewSet, StripeWebhookView, TemplatePreviewViewSet
 
 
 router = DefaultRouter()
 router.register(r'templates', TemplateViewSet, basename='template')
 router.register(r'template-instances', TemplateInstanceViewSet, basename='template-instance')
+router.register(r'template-previews', TemplatePreviewViewSet, basename='template-preview')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

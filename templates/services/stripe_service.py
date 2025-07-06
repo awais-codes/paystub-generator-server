@@ -23,13 +23,9 @@ class StripeService:
             dict: Stripe checkout session data
         """
         try:
-            # Build success and cancel URLs
-            success_url = request.build_absolute_uri(
-                reverse('template-instance-detail', kwargs={'pk': template_instance.id})
-            )
-            cancel_url = request.build_absolute_uri(
-                reverse('template-instance-detail', kwargs={'pk': template_instance.id})
-            )
+            # Build success and cancel URLs using frontend settings
+            success_url = f"{settings.FRONTEND_SUCCESS_URL}{template_instance.id}"
+            cancel_url = f"{settings.FRONTEND_CANCEL_URL}{template_instance.id}"
             
             # Create checkout session
             session = stripe.checkout.Session.create(
@@ -113,7 +109,7 @@ class StripeService:
                 # Find and update the template instance
                 template_instance = TemplateInstance.objects.get(
                     stripe_session_id=session_id
-                )
+                )  # type: ignore[attr-defined]
                 template_instance.is_paid = True
                 template_instance.save()
                 
@@ -121,7 +117,7 @@ class StripeService:
             else:
                 raise Exception("Payment not completed")
                 
-        except TemplateInstance.DoesNotExist:
+        except TemplateInstance.DoesNotExist:  # type: ignore[attr-defined]
             raise Exception("Template instance not found")
         except Exception as e:
             # Check if it's a "No such checkout.session" error

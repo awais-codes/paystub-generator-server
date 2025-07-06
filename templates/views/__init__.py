@@ -1,2 +1,2 @@
-from .api import TemplateViewSet, TemplateInstanceViewSet
+from .api import TemplateViewSet, TemplateInstanceViewSet, TemplatePreviewViewSet
 from .webhook import StripeWebhookView

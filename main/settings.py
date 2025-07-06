@@ -219,3 +219,6 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+FRONTEND_SUCCESS_URL = os.environ.get('FRONTEND_SUCCESS_URL', 'http://localhost:5173/payment-success/')
+FRONTEND_CANCEL_URL = os.environ.get('FRONTEND_CANCEL_URL', 'http://localhost:5173/payment-cancel/')
